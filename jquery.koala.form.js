@@ -13,10 +13,15 @@
         document = window.document,
         defaults = {
             triggers: ['live', 'submit'],
-            validation: [],
+            rules: [],
             submitHandler: 'input[type=submit]',
             debug: false
-        };
+        },
+        fieldDefaults = {
+            required: true,
+            type: 'input',
+            message: 'Error!'
+        }
 
     // The actual plugin constructor
     function Plugin( element, options ) {
@@ -28,24 +33,92 @@
         this.init();
     }
 
+    // Custom id generation, thanks internet
+    function getID()
+    {
+        var S4 = function (){
+            return Math.floor(
+                Math.random() * 0x10000 /* 65536 */
+            ).toString(16);};
+
+        return (
+            S4() + S4() + "-" +
+                S4() + "-" +
+                S4() + "-" +
+                S4() + "-" +
+                S4() + S4() + S4());
+    }
+
     // Console.log linked to debug...
     Plugin.prototype.log = function(message){
         if(this.options.debug){
             console.log(message);}
     };
 
-    // Validation methods
-    Plugin.prototype.validate_rule = function(rule, field){
+    // Get a field by the ID
+    Plugin.prototype.getField = function(uid){
+        var self = this;
+        var field = null;
+        $.each(this.options.rules, function(index, rule){
+            if(rule.field.form_id == uid)
+                field = rule.field;
+        });
+        return field;
+    };
 
-        var field,
-            inputData = field.val(),
+    // Get the value we want to validate by field type
+    Plugin.prototype.get_input = function(field){
+        // Logic to get data from input fields
+        return field.val();
+    };
+    Plugin.prototype.get_options = function(field){
+        // Logic to get data from radio groups
+        var fields = [];
+        // Map all fields to {checekd: bool, value: value}
+        $.each(field, function(index, val){
+            fields.push({
+                checked: val.is(':checked'),
+                value: val.val()
+            });
+        });
+        return fields;
+    };
+    Plugin.prototype.get_checklist = function(field){
+        // Logic to get data from checklists
+        var fields = [];
+        // Map all fields to {checekd: bool, value: value}
+        $.each(field, function(index, val){
+            fields.push({
+                checked: val.is(':checked'),
+                value: val.val()
+            });
+        });
+        return fields;
+    };
+    Plugin.prototype.get_checkbox = function(field){
+        // Logic to get data from a single checkbox
+        return {checked: field.is(':checked'), value: field.val()};
+    };
+    Plugin.prototype.get_select = function(field){
+        // Logic to get data from select/combos
+        return field.val();
+    };
+
+    // Validation methods
+    Plugin.prototype.validate_rule = function(field){
+
+        var rule = field.rule,
             valid = true;
+
+        // Input value
+        var methodName = 'get_' + rule.type,
+            inputValue = this[methodName](field);
 
         for(var ruleName in rule){
             var method = 'rule_' + ruleName;
             //TODO: should I prepare the input value here before the methods or inside them ? ... idk yet
-            if(Plugin.prototype[method]){
-                valid &= this[method](inputData, rule[ruleName]);}}
+            if(Plugin.prototype[method] && rule.required){
+                valid &= this[method](inputValue, rule[ruleName], field);}}
 
         // finally
         return valid;
@@ -94,10 +167,13 @@
     };
 
     // Rules methods
-    Plugin.prototype.rule_required = function(value){
-        this.log("Executing required method with value " + value);
+    Plugin.prototype.rule_empty = function(value, empty){
+        this.log("Executing empty method with value " + value);
         //TODO: complete the verification of null/undefined/zero-length and any kind of empty check
-        return value.length > 0;
+        if(!empty)
+            return (value.length > 0);
+        else if(empty)
+            return true;
     };
     Plugin.prototype.rule_minLength = function(value, min){
         this.log("Executing minLength method with value " + value + " and reference of " + min);
@@ -137,7 +213,7 @@
             // prevent the submit or link...
             e.preventDefault();
             // list of fields that failed on the rules
-            var failedList = self.validate_rules(self.options.validation);
+            var failedList = self.validate_rules(self.options.rules);
             // route you to the correct function... or callback?
             if(failedList.length > 0){
                 self.onFail(failedList);}
@@ -147,23 +223,23 @@
     };
     Plugin.prototype.trigger_focus = function(self){
         // On loose focus handler
-        this.$el.find('input').on('blur', function(e){
-            var input = $(this);
-            var inputName = input.attr('name');
-            var rules = $.grep(self.options.validation, function(item){
-                return item.fieldName == inputName;
+        for(var key in self.options.rules){
+            // Vars
+            var rule = self.options.rules[key];
+            var field = rule.field;
+            //
+            field.on('blur', function(e){
+                var ID = $(this).data('form_id');
+                self.validate_rule(self.getField(ID));
             });
-            // if we found something...
-            if(rules.length > 0){
-                self.validate_rules(rules);}
-        });
+        }
     };
     Plugin.prototype.trigger_live = function(self) {
         // Keypress trigger or live trigger
         this.$el.find('input').on('keyup', function (e) {
             var input = $(this);
             var inputName = input.attr('name');
-            var rules = $.grep(self.options.validation, function (item) {
+            var rules = $.grep(self.options.rules, function (item) {
                 return item.fieldName == inputName;
             });
             // if we found something...
@@ -178,6 +254,21 @@
         //Don't loose self consciousness
         var self = this;
 
+        // Populate Fields
+        for(var key in this.options.rules){
+            // Apply defaults for field...
+            this.options.rules[key] = $.extend({}, fieldDefaults, this.options.rules[key]);
+            //
+            var rule = this.options.rules[key];
+            // Preload the JQuery object of the field
+            this.options.rules[key]['field'] = $(rule.fieldSelector);
+            // Test recursive reference
+            var ID = getID();
+            this.options.rules[key]['field'].data('form_id', ID);
+            this.options.rules[key]['field'].form_id = ID;
+            this.options.rules[key]['field'].rule = rule;
+        }
+
         // Prepare triggers
         for(var key in this.options.triggers){
             var triggerName = this.options.triggers[key];
@@ -191,7 +282,7 @@
 
     };
 
-    // A really lightweight plugin wrapper around the constructor, 
+    // A really lightweight plugin wrapper around the constructor,
     // preventing against multiple instantiations
     $.fn[pluginName] = function ( options ) {
         return this.each(function () {
