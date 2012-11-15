@@ -27,26 +27,19 @@
         $('#koala').Manage({
             triggers: ['live', 'focus', 'submit'],
             debug: false,
-            validation: [
+            rules: [
                 {   fieldSelector: '[name=username]',
-                    fieldName: 'username',
-
                     pattern: /[a-zA-Z0-9\-]+/,
-                    required: true,
                     minLength: 5,
                     maxLength: 10,
                     message: "Wrong user input"},
 
                 {   fieldSelector: '[name=password]',
-                    fieldName: 'password',
-
-                    required: true,
                     minLength: 5,
                     maxLength: 10,
                     message: "Wrong password input" },
                 {
-                    fieldSelector: '[name=date]',
-                    fieldName: 'date',
+                    fieldSelector: '[name=date]',                    
                     pattern: /^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/,
                     message: "Date must be in format: YYYY-MM-DD"
                 }
