@@ -26,17 +26,12 @@ But for now it requires some configuration like:
   $(form).Manage({
     triggers: ['focus', 'submit'], //there's submit, live, focus
     debug: true, //so we can see some logs
-    submitHandler: '[type=submit]', //default submit handler
-    validation: [
-      //field
+    rules: [
       {
-        //Selection...
         fieldSelector: '[id=user]',
-        fieldName: 'username',
-        //Message
         message: "Error message to return :)",
-        //Rules...
-        required: true, //just check it's emptyness may be redundant if you apply any other validation
+        required: true, //should validate or not true by default
+        empty: false, //should not be blank
         pattern: /[a-zA-Z]+/i, //support to regular expression
         minLength: 5, //minimium length "<="
         maxLength: 15 //maximun length ">="
@@ -44,9 +39,8 @@ But for now it requires some configuration like:
       //another field
       {
         fieldSelector: '[name=password]',
-        fieldName: 'password',
         message: "password is alphanumeric and 8 characters length...",
-        required: true,
+        type: 'input',
         pattern: /[a-z0-9]{8}/i
        }
     ]
@@ -73,6 +67,14 @@ The rules are the same:
 * rule_pattern
 * rule_minLength
 * rule_maxLength
+
+*New
+The input type are mapped like everything else:
+* get_input
+* get_options
+* get_checklist
+* get_checkbox
+* get_select
 
 For the submit stuff I created two default functions (not necessary... normally you would handle your own form submit):
 * onSuccess
