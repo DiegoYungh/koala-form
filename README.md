@@ -8,7 +8,7 @@ I am carefully thinking about it's expansion and use, there are alot's of TODOs 
 know the answer or have a nice solution to it post here.
 
 Its error logic is binded to foundation but it's easy to change, there is two functions to handle it:
-* field_fail(field, message)
+* field_fail(field)
 * field_pass(field)
 
 The field argument is the JQuery instance of the input, in my case I added the elements and classes necessary to 
