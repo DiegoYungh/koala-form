@@ -8,8 +8,9 @@ I am carefully thinking about it's expansion and use, there are alot's of TODOs 
 know the answer or have a nice solution to it post here.
 
 Its error logic is binded to foundation but it's easy to change, there is two functions to handle it:
-  field_fail(field, message)
-  field_pass(field)
+* field_fail(field, message)
+* field_pass(field)
+
 The field argument is the JQuery instance of the input, in my case I added the elements and classes necessary to 
 foundation's error scenario but you can do anything you want, my plan is to make it a treatment callback function...
 
@@ -17,9 +18,11 @@ It's not as modular as I wanted initially but there's a lot of code and thinking
 I am open to even rewrite it if necessary, Im trying the best to make it flexible enough but we never know
 
 The plugin does have the flexibility to support a plug-n-play base like:
+```javascript
   $(form).Manage();
-
+```
 But for now it requires some configuration like:
+```javascript
   $(form).Manage({
     triggers: ['focus', 'submit'], //there's submit, live, focus
     debug: true, //so we can see some logs
@@ -48,32 +51,32 @@ But for now it requires some configuration like:
        }
     ]
   });
-
+```
 As simple as that, my sugestion is to make the objects in another file, like form.resources:
-
+```javascript
 var validationSamples = {
   name: {required: true, min: 5, max: 30},
   age: {required: true, pattern: /[0-9]{3}/},
   date: {required: true, pattern: /^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/},
   ...
 }
-
+```
 My thougths when I was coding it was not to bind it to anything except JQuery.
 
 The triggers are registered as functions like:
-  trigger_submit //submit form
-  trigger_live //keypressing on the field
-  trigger_focus //loose focus
+* trigger_submit //submit form
+* trigger_live //keypressing on the field
+* trigger_focus //loose focus
 
 The rules are the same:
-  rule_required
-  rule_pattern
-  rule_minLength
-  rule_maxLength
+* rule_required
+* rule_pattern
+* rule_minLength
+* rule_maxLength
 
 For the submit stuff I created two default functions (not necessary... normally you would handle your own form submit):
-  onSuccess
-  onFail
+* onSuccess
+* onFail
 
 As you can see it's easy to add another rule, trigger type and even the validation workflow to satisfy your needs.
 And yes as I said earlier, there is a plan to make it simpler by building some mods on top of it.
@@ -81,11 +84,11 @@ And yes as I said earlier, there is a plan to make it simpler by building some m
 Ah the code is as simples as possible, following the MISS philosophy, try to maintain it
 
 And yes again I only support simple inputs for now because that was my need, Im working on:
-  textarea
-  select
-  radio
-  check
-  upload
+* textarea
+* select
+* radio
+* check
+* upload
 
 I don't plan to put mask and field dependency on it, because its purpose is to VALIDATE the field input(for now?).
 
