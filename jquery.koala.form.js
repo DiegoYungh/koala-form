@@ -76,6 +76,7 @@
         var fields = [];
         // Map all fields to {checekd: bool, value: value}
         $.each(field, function(index, val){
+            var val = $(val);
             fields.push({
                 checked: val.is(':checked'),
                 value: val.val()
@@ -106,64 +107,40 @@
 
     // Validation methods
     Plugin.prototype.validate_rule = function(field){
-
+        // Vars
         var rule = field.rule,
             valid = true;
-
         // Input value
         var methodName = 'get_' + rule.type,
             inputValue = this[methodName](field);
-
+        // Apply rule
         for(var ruleName in rule){
             var method = 'rule_' + ruleName;
-            //TODO: should I prepare the input value here before the methods or inside them ? ... idk yet
             if(Plugin.prototype[method] && rule.required){
                 valid &= this[method](inputValue, rule[ruleName], field);}}
-
-        // finally
+        // Finally
         return valid;
     };
     Plugin.prototype.validate_rules = function(ruleList){
         /*lists*/
         var failedRules = []; //TODO: redundant? I could just mark the isValid property of a rule... what is better?
         var valid = true;
-        /**/
+        // Iterate over rules
         for(var index in ruleList){
-            /*Necessary declarations?*/
-            //I think there should be a better way to treat the jquery field element...
-            // maybe create a fieldList on the Plugin ? this.fields[rule.field]
-            // I think anything is better than this.$el.find... optimizations please...
+            // Vars
             var rule = ruleList[index];
-            var field = this.$el.find(rule.fieldSelector);
+            var field = rule.field;
             // TODO: how about some kind of flag, to see if the field has changed, this way not redundantly revalidating it
-            var valid = this.validate_rule(rule, field);
-            /*Execute validation and callbacks to change fields...*/
-            //TODO: any better way to call these field modifiers ?
+            // Validate...
+            var valid = this.validate_rule(field);
+            //TODO: any better way to call these field modifiers ? maibe as callbacks
             if(!valid){
                 failedRules.push(rule);
-                this.field_fail(field, rule.message);}
+                this.field_fail(field);}
             else if(valid){
                 this.field_pass(field);}}
         /*finally...*/
         return failedRules;
-    };
-    //TODO: field_fail/pass/success could accept callbacks so developers may create functions and pass instead of developing here...
-    Plugin.prototype.field_fail = function(field, message){
-        //There is another way... wrapping all three elements inside a div.error just choose a way...
-        //TODO: verify if the field was wrong and continue wrong ? this way shouldn't need to process it again
-        //add classes...
-        field.prev().addClass('error');
-        field.addClass('error');
-        if(field.next()[0].tagName != 'SMALL')
-            field.after('<small class="error">' + message + '</small>');
-    };
-    Plugin.prototype.field_pass = function(field){
-        //remove classes
-        field.prev().removeClass('error');
-        field.removeClass('error');
-        //remove the small comment...
-        if(field.next()[0].tagName == 'SMALL')
-            field.next().remove();
     };
 
     // Rules methods
@@ -190,23 +167,21 @@
         return matches? (matches.length > 0): false;
     };
 
-    // Default validaton callbacks
-    Plugin.prototype.onSuccess = function(){
-        this.log('On success triggered!');
-        this.element.submit(); //normally we should submit the form :)
-    };
-    Plugin.prototype.onFail = function(failedInputs){
-        /*If something went wrong we receive a list of failed inputs with both our input and the rule object associated */
-        for(var key in failedInputs){
-            var rule = failedInputs[key];
-            var input = this.$el.find(rule.field);
-        }
-     };
-
-    // Default Validation Triggers
+    // Trigger methods
     // TODO: add/remove triggers on-the-fly ?
     // If then I should add 2 methods, registerTrigger and remove/unregister it, this way you can change your
     // validation mode on-the-fly...
+    function validateHandler($this, self){
+        // Validate
+        var ID = $this.data('form_id'),
+            field = self.getField(ID),
+            valid = self.validate_rule(field);
+        // Apply on fields
+        if(!valid){
+            self.field_fail(field);}
+        else if(valid){
+            self.field_pass(field);}
+    }
     Plugin.prototype.trigger_submit = function(self){
         // Submit handler...
         this.$el.on('submit', function(e){
@@ -228,25 +203,18 @@
             var rule = self.options.rules[key];
             var field = rule.field;
             //
-            field.on('blur', function(e){
-                var ID = $(this).data('form_id');
-                self.validate_rule(self.getField(ID));
-            });
+            field.on('blur', function(e){validateHandler($(this), self);});
         }
     };
     Plugin.prototype.trigger_live = function(self) {
         // Keypress trigger or live trigger
-        this.$el.find('input').on('keyup', function (e) {
-            var input = $(this);
-            var inputName = input.attr('name');
-            var rules = $.grep(self.options.rules, function (item) {
-                return item.fieldName == inputName;
-            });
-            // if we found something...
-            if (rules.length > 0) {
-                self.validate_rules(rules);
-            }
-        });
+        for(var key in self.options.rules){
+            // Vars
+            var rule = self.options.rules[key];
+            var field = rule.field;
+            //
+            field.on('keyup', function(e){validateHandler($(this), self);});
+        }
     };
 
     // Start
@@ -280,6 +248,37 @@
 
         // Prepare something else...
 
+    };
+
+    // Future Callbacks
+    //TODO: field_fail/pass/success could accept callbacks so developers may create functions and pass instead of developing here...
+    Plugin.prototype.field_fail = function(field){
+        // There is another way... wrapping all three elements inside a div.error just choose a way...
+        // TODO: verify if the field was wrong and continue wrong ? this way shouldn't need to process it again
+        // add classes...
+        field.prev().addClass('error');
+        field.addClass('error');
+        var nextElement = field.next()[0];
+        if(nextElement && nextElement.tagName != 'SMALL'){
+            var message = field.rule.message;
+            field.after('<small class="error">' + message + '</small>');}
+    };
+    Plugin.prototype.field_pass = function(field){
+        //remove classes
+        field.prev().removeClass('error');
+        field.removeClass('error');
+        //remove the small comment...
+        var nextElement = field.next()[0];
+        if(nextElement && nextElement.tagName == 'SMALL')
+            field.next().remove();
+    };
+    // Default validation callbacks
+    Plugin.prototype.onSuccess = function(){
+        this.log('On success triggered!');
+        this.element.submit(); //normally we should submit the form :)
+    };
+    Plugin.prototype.onFail = function(failedInputs){
+        /*If something went wrong we receive a list of failed inputs with both our input and the rule object associated */
     };
 
     // A really lightweight plugin wrapper around the constructor,
