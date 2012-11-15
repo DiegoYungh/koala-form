@@ -1,0 +1,56 @@
+<!-- 
+    I'm assuming here you have included: 
+    Foundation Framework
+    Jquery/Zepto
+    jquery.koala.form
+-->
+<div class="row">
+    <div class="twelve columns" id="content">
+        <div class="panel">
+            <form id="koala" action="">
+                <label>username</label>
+                <input type="text" name="username">
+                <label>password</label>
+                <input type="password" name="password">
+                <label>date</label>
+                <input type="text" name="date">
+                <input type="submit" value="login" class="button success">
+                <input type="button" value="cancel" class="button secondary">
+            </form>
+        </div>
+    </div>
+</div>
+<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+<script src="../jquery.koala.form.js"></script>
+<script type="text/javascript">
+    $(function(){
+        $('#koala').Manage({
+            triggers: ['live', 'focus', 'submit'],
+            debug: false,
+            validation: [
+                {   fieldSelector: '[name=username]',
+                    fieldName: 'username',
+
+                    pattern: /[a-zA-Z0-9\-]+/,
+                    required: true,
+                    minLength: 5,
+                    maxLength: 10,
+                    message: "Wrong user input"},
+
+                {   fieldSelector: '[name=password]',
+                    fieldName: 'password',
+
+                    required: true,
+                    minLength: 5,
+                    maxLength: 10,
+                    message: "Wrong password input" },
+                {
+                    fieldSelector: '[name=date]',
+                    fieldName: 'date',
+                    pattern: /^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/,
+                    message: "Date must be in format: YYYY-MM-DD"
+                }
+             ]
+        });
+    });
+</script>
