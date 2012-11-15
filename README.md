@@ -1,4 +1,4 @@
-koala-form
+Koala Form
 ==========
 
 Yet another JQuery Form Validator but Binded with foundation
@@ -54,7 +54,7 @@ As simple as that, my sugestion is to make the objects in another file, like for
 var validationSamples = {
   name: {required: true, min: 5, max: 30},
   age: {required: true, pattern: /[0-9]{3}/},
-  date: {required: true, pattern: /[0-9]{4}-[0-9]{2}-[0-9]{2}/},
+  date: {required: true, pattern: /^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$/},
   ...
 }
 
@@ -97,5 +97,16 @@ Field recognition, caching previous validations to have smarter responses based 
 Focus trigger with intention implemented (just passed with tab and it revalidated, it's a pain)
 Live trigger smarter, waiting for user to finish typing.
 Field pass/fail classes for more frameworks
+
+Why Foundation
+==============
+
+Foundation is not perfect, but satisfy my prototyping needs.
+I believe in it's power
+
+Considerations
+==============
+
+Wife and coffee
 
 Thanks for reading
